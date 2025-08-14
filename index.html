@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Land Use of Chainda Mouza (Cox's Bazar, Bangladesh)</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/WorldMap_0.js"></script>
+        <script src="data/CurrentCrop_1.js"></script>
+        <script src="data/LandUse_2.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[21.406893782368844,92.03691224115599],[21.411116808924575,92.04548837971261]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topright'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Land Use of Chainda Mouza (Cox\'s Bazar, Bangladesh)</h2>';
+        };
+        title.addTo(map);
+        var abstract = new L.Control({'position':'bottomright'});
+        abstract.onAdd = function (map) {
+            this._div = L.DomUtil.create('div',
+            'leaflet-control abstract');
+            this._div.id = 'abstract'
+                this._div.setAttribute("onmouseenter", "abstract.show()");
+                this._div.setAttribute("onmouseleave", "abstract.hide()");
+                this.hide();
+                return this._div;
+            };
+            abstract.hide = function () {
+                this._div.classList.remove("abstractUncollapsed");
+                this._div.classList.add("abstract");
+                this._div.innerHTML = 'i'
+            }
+            abstract.show = function () {
+                this._div.classList.remove("abstract");
+                this._div.classList.add("abstractUncollapsed");
+                this._div.innerHTML = 'This web map presents a detailed analysis of land use in the Chainda Mouza of Cox\'s Bazar, Bangladesh. The study utilized a comprehensive approach that began with the georeferencing of the traditional mouza map using ground truth data collected through geological points. Following this, the mouza map was digitized to create a foundational geospatial layer. Further refinement of the land use classification was achieved by conducting a field survey using the Fractional Code Method, which captured detailed land cover information at a micro-level. The integration of these methodologies allows for a precise and accurate representation of the spatial distribution of different land use categories within the mouza. The resulting web map serves as an accessible and dynamic tool for researchers, planners, and local stakeholders, offering valuable insights into the current land use patterns and providing a critical baseline for future urban and environmental planning initiatives.';
+        };
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        function pop_WorldMap_0(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['iso_a2'] !== null ? autolinker.link(String(feature.properties['iso_a2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FIPS_10_'] !== null ? autolinker.link(String(feature.properties['FIPS_10_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ISO_A3'] !== null ? autolinker.link(String(feature.properties['ISO_A3']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['WB_A2'] !== null ? autolinker.link(String(feature.properties['WB_A2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['WB_A3'] !== null ? autolinker.link(String(feature.properties['WB_A3']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_WorldMap_0_0() {
+            return {
+                pane: 'pane_WorldMap_0',
+                opacity: 1,
+                color: 'rgba(119,116,104,0.6039215686274509)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,220,202,0.6039215686274509)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_WorldMap_0');
+        map.getPane('pane_WorldMap_0').style.zIndex = 400;
+        map.getPane('pane_WorldMap_0').style['mix-blend-mode'] = 'normal';
+        var layer_WorldMap_0 = new L.geoJson(json_WorldMap_0, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_WorldMap_0',
+            layerName: 'layer_WorldMap_0',
+            pane: 'pane_WorldMap_0',
+            onEachFeature: pop_WorldMap_0,
+            style: style_WorldMap_0_0,
+        });
+        bounds_group.addLayer(layer_WorldMap_0);
+        map.addLayer(layer_WorldMap_0);
+        function pop_CurrentCrop_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid_'] !== null ? autolinker.link(String(feature.properties['fid_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? autolinker.link(String(feature.properties['Id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Plot_Numbe</strong><br />' + (feature.properties['Plot_Numbe'] !== null ? autolinker.link(String(feature.properties['Plot_Numbe']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Land_Use</strong><br />' + (feature.properties['Land_Use'] !== null ? autolinker.link(String(feature.properties['Land_Use']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Current_Cr</strong><br />' + (feature.properties['Current_Cr'] !== null ? autolinker.link(String(feature.properties['Current_Cr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Cropping_S</strong><br />' + (feature.properties['Cropping_S'] !== null ? autolinker.link(String(feature.properties['Cropping_S']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Iri_App</strong><br />' + (feature.properties['Iri_App'] !== null ? autolinker.link(String(feature.properties['Iri_App']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Irr_Meth</strong><br />' + (feature.properties['Irr_Meth'] !== null ? autolinker.link(String(feature.properties['Irr_Meth']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Soil_Fer</strong><br />' + (feature.properties['Soil_Fer'] !== null ? autolinker.link(String(feature.properties['Soil_Fer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Amout_o_La</strong><br />' + (feature.properties['Amout_o_La'] !== null ? autolinker.link(String(feature.properties['Amout_o_La']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Shape_o_Pl</strong><br />' + (feature.properties['Shape_o_Pl'] !== null ? autolinker.link(String(feature.properties['Shape_o_Pl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Configurat</strong><br />' + (feature.properties['Configurat'] !== null ? autolinker.link(String(feature.properties['Configurat']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>R_Elevatio</strong><br />' + (feature.properties['R_Elevatio'] !== null ? autolinker.link(String(feature.properties['R_Elevatio']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Slop_O_Lan</strong><br />' + (feature.properties['Slop_O_Lan'] !== null ? autolinker.link(String(feature.properties['Slop_O_Lan']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Inundation</strong><br />' + (feature.properties['Inundation'] !== null ? autolinker.link(String(feature.properties['Inundation']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Soil_color</strong><br />' + (feature.properties['Soil_color'] !== null ? autolinker.link(String(feature.properties['Soil_color']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Texture_O_</strong><br />' + (feature.properties['Texture_O_'] !== null ? autolinker.link(String(feature.properties['Texture_O_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Erision_of</strong><br />' + (feature.properties['Erision_of'] !== null ? autolinker.link(String(feature.properties['Erision_of']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Draniage_s</strong><br />' + (feature.properties['Draniage_s'] !== null ? autolinker.link(String(feature.properties['Draniage_s']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Area</strong><br />' + (feature.properties['Area'] !== null ? autolinker.link(String(feature.properties['Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CurrentCrop_1_0(feature) {
+            switch(String(feature.properties['Current_Cr'])) {
+                case '0':
+                    return {
+                pane: 'pane_CurrentCrop_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(194,201,198,1.0)',
+                interactive: false,
+            }
+                    break;
+                case '13':
+                    return {
+                pane: 'pane_CurrentCrop_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(143,240,167,1.0)',
+                interactive: false,
+            }
+                    break;
+                case '19':
+                    return {
+                pane: 'pane_CurrentCrop_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,20,51,1.0)',
+                interactive: false,
+            }
+                    break;
+                case '2':
+                    return {
+                pane: 'pane_CurrentCrop_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(113,172,220,1.0)',
+                interactive: false,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_CurrentCrop_1');
+        map.getPane('pane_CurrentCrop_1').style.zIndex = 401;
+        map.getPane('pane_CurrentCrop_1').style['mix-blend-mode'] = 'normal';
+        var layer_CurrentCrop_1 = new L.geoJson(json_CurrentCrop_1, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_CurrentCrop_1',
+            layerName: 'layer_CurrentCrop_1',
+            pane: 'pane_CurrentCrop_1',
+            onEachFeature: pop_CurrentCrop_1,
+            style: style_CurrentCrop_1_0,
+        });
+        bounds_group.addLayer(layer_CurrentCrop_1);
+        map.addLayer(layer_CurrentCrop_1);
+        function pop_LandUse_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>Plot Number</strong><br />' + (feature.properties['Plot_Numbe'] !== null ? autolinker.link(String(feature.properties['Plot_Numbe']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Land Use</strong><br />' + (feature.properties['Land_Use'] !== null ? autolinker.link(String(feature.properties['Land_Use']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Current Crop</strong><br />' + (feature.properties['Current_Cr'] !== null ? autolinker.link(String(feature.properties['Current_Cr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Cropping System</strong><br />' + (feature.properties['Cropping_S'] !== null ? autolinker.link(String(feature.properties['Cropping_S']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Irrigation Application</strong><br />' + (feature.properties['Iri_App'] !== null ? autolinker.link(String(feature.properties['Iri_App']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Irrigation Method</strong><br />' + (feature.properties['Irr_Meth'] !== null ? autolinker.link(String(feature.properties['Irr_Meth']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Soil Fertility</strong><br />' + (feature.properties['Soil_Fer'] !== null ? autolinker.link(String(feature.properties['Soil_Fer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Amount of Land</strong><br />' + (feature.properties['Amout_o_La'] !== null ? autolinker.link(String(feature.properties['Amout_o_La']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Shape of Plot</strong><br />' + (feature.properties['Shape_o_Pl'] !== null ? autolinker.link(String(feature.properties['Shape_o_Pl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Configurat</strong><br />' + (feature.properties['Configurat'] !== null ? autolinker.link(String(feature.properties['Configurat']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Relevent Elevation</strong><br />' + (feature.properties['R_Elevatio'] !== null ? autolinker.link(String(feature.properties['R_Elevatio']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Slope of Land</strong><br />' + (feature.properties['Slop_O_Lan'] !== null ? autolinker.link(String(feature.properties['Slop_O_Lan']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Inundation</strong><br />' + (feature.properties['Inundation'] !== null ? autolinker.link(String(feature.properties['Inundation']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Soil Color</strong><br />' + (feature.properties['Soil_color'] !== null ? autolinker.link(String(feature.properties['Soil_color']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Soil Texture</strong><br />' + (feature.properties['Texture_O_'] !== null ? autolinker.link(String(feature.properties['Texture_O_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Erision of Soil</strong><br />' + (feature.properties['Erision_of'] !== null ? autolinker.link(String(feature.properties['Erision_of']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Draniage System</strong><br />' + (feature.properties['Draniage_s'] !== null ? autolinker.link(String(feature.properties['Draniage_s']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Area</strong><br />' + (feature.properties['Area'] !== null ? autolinker.link(String(feature.properties['Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_LandUse_2_0(feature) {
+            switch(String(feature.properties['Land_Use'])) {
+                case '1':
+                    return {
+                pane: 'pane_LandUse_2',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '14':
+                    return {
+                pane: 'pane_LandUse_2',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(128,0,128,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '2':
+                    return {
+                pane: 'pane_LandUse_2',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,128,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '3':
+                    return {
+                pane: 'pane_LandUse_2',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(144,238,144,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_LandUse_2');
+        map.getPane('pane_LandUse_2').style.zIndex = 402;
+        map.getPane('pane_LandUse_2').style['mix-blend-mode'] = 'normal';
+        var layer_LandUse_2 = new L.geoJson(json_LandUse_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LandUse_2',
+            layerName: 'layer_LandUse_2',
+            pane: 'pane_LandUse_2',
+            onEachFeature: pop_LandUse_2,
+            style: style_LandUse_2_0,
+        });
+        bounds_group.addLayer(layer_LandUse_2);
+        map.addLayer(layer_LandUse_2);
+        const url = {"Nominatim": "https://nominatim.openstreetmap.org/search?format=geojson&addressdetails=1&",
+        "BAN": "https://api-adresse.data.gouv.fr/search/?"}
+        var photonControl = L.control.photon({
+            url: url["Nominatim"],
+            feedbackLabel: '',
+            position: 'topleft',
+            includePosition: true,
+            initial: true,
+            // resultsHandler: myHandler,
+        }).addTo(map);
+        photonControl._container.childNodes[0].style.borderRadius="10px"
+        // Create a variable to store the geoJSON data
+        var x = null;
+        // Create a variable to store the marker
+        var marker = null;
+        // Add an event listener to the Photon control to create a marker from the returned geoJSON data
+        var z = null;
+        photonControl.on('selected', function(e) {
+            console.log(photonControl.search.resultsContainer);
+            if (x != null) {
+                map.removeLayer(obj3.marker);
+                map.removeLayer(x);
+            }
+            obj2.gcd = e.choice;
+            x = L.geoJSON(obj2.gcd).addTo(map);
+            var label = typeof obj2.gcd.properties.label === 'undefined' ? obj2.gcd.properties.display_name : obj2.gcd.properties.label;
+            obj3.marker = L.marker(x.getLayers()[0].getLatLng()).bindPopup(label).addTo(map);
+            map.setView(x.getLayers()[0].getLatLng(), 17);
+            z = typeof e.choice.properties.label === 'undefined'? e.choice.properties.display_name : e.choice.properties.label;
+            console.log(e);
+            e.target.input.value = z;
+        });
+        var search = document.getElementsByClassName("leaflet-photon leaflet-control")[0];
+        search.classList.add("leaflet-control-search")
+        search.style.display = "flex";
+        search.style.backgroundColor="rgba(255,255,255,0.5)" 
+
+        // Créer le nouvel élément bouton
+        var button = document.createElement("div");
+        button.id = "gcd-button-control";
+        button.className = "gcd-gl-btn fa fa-search search-button";
+
+        // Ajouter le bouton à l'élément parent
+        search.insertBefore(button, search.firstChild);
+        last = search.lastChild;
+        last.style.display = "none";
+        button.addEventListener("click", function (e) {
+            if (last.style.display === "none") {
+                last.style.display = "block";
+            } else {
+                last.style.display = "none";
+            }
+        });
+        var overlaysTree = [
+            {label: 'Land Use<br /><table><tr><td style="text-align: center;"><img src="legend/LandUse_2_SettlementandUncultivatedLand10.png" /></td><td>Settlement and Uncultivated Land(1)</td></tr><tr><td style="text-align: center;"><img src="legend/LandUse_2_EducationalInstitute141.png" /></td><td>Educational Institute(14)</td></tr><tr><td style="text-align: center;"><img src="legend/LandUse_2_AgriculturealLand22.png" /></td><td>Agricultureal Land(2)</td></tr><tr><td style="text-align: center;"><img src="legend/LandUse_2_PlantandOthersPermanentCrops33.png" /></td><td>Plant and Others Permanent Crops(3)</td></tr></table>', layer: layer_LandUse_2},
+            {label: 'Current Crop<br /><table><tr><td style="text-align: center;"><img src="legend/CurrentCrop_1_Null00.png" /></td><td>Null (0)</td></tr><tr><td style="text-align: center;"><img src="legend/CurrentCrop_1_AmanBoro131.png" /></td><td>Aman & Boro (13)</td></tr><tr><td style="text-align: center;"><img src="legend/CurrentCrop_1_AtecaNut192.png" /></td><td>Ateca Nut (19)</td></tr><tr><td style="text-align: center;"><img src="legend/CurrentCrop_1_Aush23.png" /></td><td>Aush (2)</td></tr></table>', layer: layer_CurrentCrop_1},
+            {label: '<img src="legend/WorldMap_0.png" /> World Map', layer: layer_WorldMap_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
+        layer_CurrentCrop_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Plot_Numbe'] !== null?String('<div style="color: #000000; font-size: 8pt; font-family: \'Arial\', sans-serif;">' + layer.feature.properties['Plot_Numbe']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_CurrentCrop_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_LandUse_2.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Plot_Numbe'] !== null?String('<div style="color: #000000; font-size: 8pt; font-family: \'Arial\', sans-serif;">' + layer.feature.properties['Plot_Numbe']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_LandUse_2'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer_CurrentCrop_1,layer_LandUse_2]);
+        map.on("zoomend", function(){
+            resetLabels([layer_CurrentCrop_1,layer_LandUse_2]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_CurrentCrop_1,layer_LandUse_2]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_CurrentCrop_1,layer_LandUse_2]);
+        });
+        </script>
+    </body>
+</html>
